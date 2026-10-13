@@ -1,19 +1,28 @@
 const { z } = require('zod');
 const { CATEGORIES, CONDITIONS, LENDING_TYPES } = require('../utils/constants');
 
-exports.create = z.object({
+const base = z.object({
   title: z.string().trim().min(3).max(100),
   description: z.string().trim().min(10).max(1000),
   category: z.enum(CATEGORIES),
   condition: z.enum(CONDITIONS),
   lendingType: z.enum(LENDING_TYPES),
+  price: z.coerce.number().int().min(0).max(100000).optional(),
   pickupLocation: z.string().trim().min(2).max(100),
 });
 
-exports.update = exports.create.partial().extend({
-  listingStatus: z.enum(['available', 'unavailable']).optional(),
-  removeImages: z.union([z.string().transform((value) => [value]), z.array(z.string())]).default([]),
+exports.create = base.refine((data) => (data.lendingType === 'sell') === (data.price !== undefined), {
+  message: 'Price is required for items for sale, and only for them',
+  path: ['price'],
 });
+
+exports.update = base
+  .omit({ lendingType: true })
+  .partial()
+  .extend({
+    listingStatus: z.enum(['available', 'unavailable']).optional(),
+    removeImages: z.union([z.string().transform((value) => [value]), z.array(z.string())]).default([]),
+  });
 
 exports.list = z.object({
   search: z.string().trim().max(60).optional(),

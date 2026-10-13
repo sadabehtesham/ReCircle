@@ -13,8 +13,13 @@ const itemSchema = new Schema(
     },
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     lendingType: { type: String, enum: LENDING_TYPES, required: true },
+    price: { type: Number, min: 0, required() { return this.lendingType === 'sell'; } },
     pickupLocation: { type: String, required: true, trim: true, maxlength: 100 },
-    listingStatus: { type: String, enum: ['available', 'unavailable', 'removed'], default: 'available' },
+    listingStatus: {
+      type: String,
+      enum: ['available', 'reserved', 'closed', 'unavailable', 'removed'],
+      default: 'available',
+    },
   },
   { timestamps: true }
 );

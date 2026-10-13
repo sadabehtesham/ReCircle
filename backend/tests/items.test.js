@@ -42,10 +42,12 @@ const createListing = async (agent, overrides = {}) => {
     .post('/api/items')
     .field({ ...valid, ...overrides })
     .attach('images', Buffer.from('image data'), { filename: 'item.png', contentType: 'image/png' });
-  expect(uploadAll).toHaveBeenCalledWith(
-    [expect.objectContaining({ originalname: 'item.png' })],
-    'items'
-  );
+  if (response.status === 201) {
+    expect(uploadAll).toHaveBeenCalledWith(
+      [expect.objectContaining({ originalname: 'item.png' })],
+      'items'
+    );
+  }
   return response;
 };
 
@@ -112,6 +114,31 @@ test('create stores images and list responses only expose safe owner fields', as
   expect(detail.body.data.item.ownerId.email).toBeUndefined();
 });
 
+test('price is required for sell items and forbidden otherwise', async () => {
+  const agent = request.agent(app);
+  await register(agent, 'price-validation@college.edu');
+
+  expect((await createListing(agent, { lendingType: 'sell' })).status).toBe(400);
+  expect((await createListing(agent, { price: '100' })).status).toBe(400);
+
+  const sale = await createListing(agent, { lendingType: 'sell', price: '500' });
+  expect(sale.status).toBe(201);
+  expect(sale.body.data.item.price).toBe(500);
+  expect((await createListing(agent, { lendingType: 'giveaway' })).status).toBe(201);
+});
+
+test('price and lending type cannot be changed on a non-sell item', async () => {
+  const agent = request.agent(app);
+  await register(agent, 'price-update@college.edu');
+  const created = await createListing(agent);
+  const id = created.body.data.item._id;
+
+  expect((await agent.patch(`/api/items/${id}`).send({ price: 100 })).status).toBe(400);
+  const response = await agent.patch(`/api/items/${id}`).send({ lendingType: 'sell' });
+  expect(response.status).toBe(200);
+  expect(response.body.data.item.lendingType).toBe('borrow');
+});
+
 test('list filters, searches, safely handles regex characters, and paginates', async () => {
   const agent = request.agent(app);
   await register(agent, 'listing-filters@college.edu');
@@ -147,6 +174,25 @@ test('unavailable listings are hidden from the marketplace but remain viewable',
   expect(updated.status).toBe(200);
   expect((await request(app).get('/api/items')).body.data.items).toHaveLength(0);
   expect((await request(app).get(`/api/items/${id}`)).status).toBe(200);
+});
+
+test('reserved or closed listings cannot be edited or removed', async () => {
+  const agent = request.agent(app);
+  await register(agent, 'transaction-item@college.edu');
+
+  for (const status of ['reserved', 'closed']) {
+    const created = await createListing(agent);
+    const id = created.body.data.item._id;
+    await Item.updateOne({ _id: id }, { listingStatus: status });
+
+    const update = await agent.patch(`/api/items/${id}`).send({ title: 'New title' });
+    expect(update.status).toBe(409);
+    expect(update.body.message).toBe('This listing is in a transaction and cannot be changed');
+
+    const remove = await agent.delete(`/api/items/${id}`);
+    expect(remove.status).toBe(409);
+    expect((await Item.findById(id)).listingStatus).toBe(status);
+  }
 });
 
 test('rejects non-image uploads and reports invalid item IDs as 400', async () => {

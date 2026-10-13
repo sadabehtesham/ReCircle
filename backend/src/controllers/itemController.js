@@ -10,6 +10,8 @@ const findOwned = async (req) => {
   const item = await Item.findOne({ _id: req.params.id, listingStatus: { $ne: 'removed' } });
   if (!item) throw new ApiError(404, 'Item not found');
   if (!item.ownerId.equals(req.user._id)) throw new ApiError(403, 'You can only change your own listings');
+  if (!['available', 'unavailable'].includes(item.listingStatus))
+    throw new ApiError(409, 'This listing is in a transaction and cannot be changed');
   return item;
 };
 
@@ -57,6 +59,7 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   const item = await findOwned(req);
   const { removeImages, ...fields } = req.body;
+  if (fields.price !== undefined && item.lendingType !== 'sell') throw new ApiError(400, 'Only items for sale have a price');
   const gone = item.images.filter((image) => removeImages.includes(image.publicId));
   const keep = item.images.filter((image) => !removeImages.includes(image.publicId));
   const total = keep.length + (req.files?.length ?? 0);
