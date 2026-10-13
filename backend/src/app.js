@@ -12,6 +12,7 @@ app.use(cookieParser());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/items', require('./routes/items'));
 app.use('/api/users', require('./routes/users'));
+app.use('/api/requests', require('./routes/requests'));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });

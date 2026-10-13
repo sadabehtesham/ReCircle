@@ -1,6 +1,8 @@
 const Item = require('../models/Item');
+const BorrowRequest = require('../models/BorrowRequest');
 const ApiError = require('../utils/ApiError');
 const images = require('../services/images');
+const { OPEN_STATUSES } = require('../utils/constants');
 
 const SORTS = { newest: { createdAt: -1 }, oldest: { createdAt: 1 }, title: { title: 1 } };
 const OWNER_FIELDS = 'name college profileImage';
@@ -12,6 +14,8 @@ const findOwned = async (req) => {
   if (!item.ownerId.equals(req.user._id)) throw new ApiError(403, 'You can only change your own listings');
   if (!['available', 'unavailable'].includes(item.listingStatus))
     throw new ApiError(409, 'This listing is in a transaction and cannot be changed');
+  if (await BorrowRequest.exists({ itemId: item._id, status: { $in: OPEN_STATUSES } }))
+    throw new ApiError(409, 'This listing has open requests and cannot be changed');
   return item;
 };
 
