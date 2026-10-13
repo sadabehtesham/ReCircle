@@ -10,6 +10,7 @@ app.use(cors({ origin: process.env.CLIENT_URL || false, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/items', require('./routes/items'));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });

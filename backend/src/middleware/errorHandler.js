@@ -3,9 +3,15 @@ module.exports = (err, req, res, next) => {
   let message = err.message;
   if (err.name === 'ZodError') {
     status = 400;
-    message = err.issues.map((i) => i.message).join(', ');
-  } else if (err.name === 'ValidationError' || err.name === 'CastError') {
+    message = err.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ');
+  } else if (err.name === 'CastError') {
     status = 400;
+    message = 'Invalid ID';
+  } else if (err.name === 'ValidationError') {
+    status = 400;
+  } else if (err.name === 'MulterError') {
+    status = 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'Each image must be under 5 MB' : 'Upload error (max 5 images)';
   } else if (err.code === 11000) {
     status = 409;
     message = `${Object.keys(err.keyValue)[0]} already in use`;
