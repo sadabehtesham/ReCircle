@@ -23,8 +23,10 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-5xl items-center justify-between p-4">
         <Link to="/" className="text-lg font-bold text-green-700">ReUseLoop</Link>
         <div className="flex items-center gap-4 text-sm">
+          <Link to="/items">Browse</Link>
           {user ? (
             <>
+              <Link to="/items/new">List an item</Link>
               <Link to="/dashboard">Dashboard</Link>
               <button onClick={handleLogout} className="text-gray-600 hover:text-gray-900">Log out</button>
             </>

@@ -1,8 +1,8 @@
-export default function Field({ label, id, ...props }) {
+export default function Field({ label, id, as: Tag = 'input', ...props }) {
   return (
     <div>
       <label htmlFor={id} className="block text-sm font-medium text-gray-700">{label}</label>
-      <input
+      <Tag
         id={id}
         name={id}
         required
