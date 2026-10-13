@@ -12,6 +12,7 @@ import ItemDetail from './pages/ItemDetail';
 import ItemForm from './pages/ItemForm';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
+import Requests from './pages/Requests';
 
 export default function App() {
   const { authError } = useAuth();
@@ -33,6 +34,8 @@ export default function App() {
             <Route path="/items/new" element={<ItemForm />} />
             <Route path="/items/:id/edit" element={<ItemForm />} />
             <Route path="/profile/edit" element={<EditProfile />} />
+            <Route path="/requests" element={<Requests role="borrower" />} />
+            <Route path="/requests/incoming" element={<Requests role="owner" />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

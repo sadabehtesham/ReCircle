@@ -8,5 +8,7 @@ router.use(protect);
 router.get('/', validate(v.list, 'query'), c.list);
 router.post('/', validate(v.create), c.create);
 router.patch('/:id/cancel', c.cancel);
+router.patch('/:id/approve', c.approve);
+router.patch('/:id/reject', c.reject);
 
 module.exports = router;

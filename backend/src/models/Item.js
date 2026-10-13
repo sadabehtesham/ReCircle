@@ -15,6 +15,7 @@ const itemSchema = new Schema(
     lendingType: { type: String, enum: LENDING_TYPES, required: true },
     price: { type: Number, min: 0, required() { return this.lendingType === 'sell'; } },
     pickupLocation: { type: String, required: true, trim: true, maxlength: 100 },
+    bookingSeq: { type: Number, default: 0, select: false },
     listingStatus: {
       type: String,
       enum: ['available', 'reserved', 'closed', 'unavailable', 'removed'],
