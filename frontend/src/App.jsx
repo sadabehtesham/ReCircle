@@ -10,6 +10,8 @@ import { useAuth } from './context/AuthContext';
 import Marketplace from './pages/Marketplace';
 import ItemDetail from './pages/ItemDetail';
 import ItemForm from './pages/ItemForm';
+import Profile from './pages/Profile';
+import EditProfile from './pages/EditProfile';
 
 export default function App() {
   const { authError } = useAuth();
@@ -23,12 +25,14 @@ export default function App() {
           <Route path="/" element={<Landing />} />
           <Route path="/items" element={<Marketplace />} />
           <Route path="/items/:id" element={<ItemDetail />} />
+          <Route path="/users/:id" element={<Profile />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/items/new" element={<ItemForm />} />
             <Route path="/items/:id/edit" element={<ItemForm />} />
+            <Route path="/profile/edit" element={<EditProfile />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

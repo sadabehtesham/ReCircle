@@ -9,6 +9,7 @@ const userSchema = new Schema(
     college: { type: String, required: true, trim: true, maxlength: 100 },
     role: { type: String, enum: ['student', 'admin'], default: 'student' },
     profileImage: { type: String, default: '' },
+    profileImageId: { type: String, default: '' },
     accountStatus: { type: String, enum: ['active', 'suspended'], default: 'active' },
   },
   {
@@ -16,6 +17,7 @@ const userSchema = new Schema(
     toJSON: {
       transform: (doc, ret) => {
         delete ret.passwordHash;
+        delete ret.profileImageId;
         delete ret.__v;
         return ret;
       },

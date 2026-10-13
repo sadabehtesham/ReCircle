@@ -56,7 +56,7 @@ export default function ItemDetail() {
   const rows = [
     ['Category', CATEGORIES[item.category]],
     ['Pickup location', item.pickupLocation],
-    ['Owner', `${item.ownerId.name}, ${item.ownerId.college}`],
+    ['Owner', <Link key="owner" to={`/users/${item.ownerId._id}`} className="text-green-700 underline">{item.ownerId.name}, {item.ownerId.college}</Link>],
     ['Listed', new Date(item.createdAt).toLocaleDateString()],
   ];
 
