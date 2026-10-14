@@ -14,6 +14,7 @@ app.use('/api/items', require('./routes/items'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/requests', require('./routes/requests'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/dashboard', require('./routes/dashboard'));
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Not found' });

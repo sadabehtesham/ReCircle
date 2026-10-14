@@ -28,6 +28,7 @@ export default function Navbar() {
             <>
               <Link to="/items/new">List an item</Link>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/my-listings">My Listings</Link>
               <Link to="/requests">My requests</Link>
               <Link to="/requests/incoming">Incoming</Link>
               <Link to="/loans">Loans</Link>

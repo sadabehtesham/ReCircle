@@ -42,6 +42,20 @@ exports.list = async (req, res) => {
   res.json({ success: true, data: { items, page, limit, total, pages: Math.ceil(total / limit) } });
 };
 
+exports.mine = async (req, res) => {
+  const { page, limit } = req.valid;
+  const filter = { ownerId: req.user._id, listingStatus: { $ne: 'removed' } };
+  const [items, total] = await Promise.all([
+    Item.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate('ownerId', OWNER_FIELDS),
+    Item.countDocuments(filter),
+  ]);
+  res.json({ success: true, data: { items, page, limit, total, pages: Math.ceil(total / limit) } });
+};
+
 exports.getOne = async (req, res) => {
   const item = await Item.findOne({ _id: req.params.id, listingStatus: { $ne: 'removed' } }).populate('ownerId', OWNER_FIELDS);
   if (!item) throw new ApiError(404, 'Item not found');
