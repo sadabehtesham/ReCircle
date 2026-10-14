@@ -3,7 +3,8 @@ const Transaction = require('../models/Transaction');
 const Item = require('../models/Item');
 const ApiError = require('../utils/ApiError');
 const withTxn = require('../utils/transaction');
-const { today, DAY } = require('../utils/dates');
+const { today, DAY, fmtDay } = require('../utils/dates');
+const { notify } = require('./notificationService');
 
 const loadAsOwner = async (user, id, session) => {
   const request = await BorrowRequest.findById(id).session(session);
@@ -61,6 +62,14 @@ exports.handover = (user, id, { condition, paymentReceived }) =>
       ],
       { session }
     );
+    await notify({
+      recipientId: request.borrowerId,
+      type: 'handover',
+      title: 'Handover confirmed',
+      relatedEntityId: transaction._id,
+      link: isBorrow ? '/loans' : '/loans/history',
+      message: `${user.name} confirmed handing over “${item.title}”. ${isBorrow ? `Return it by ${fmtDay(request.endDate)}.` : "It's yours!"}`,
+    }, session);
     return { request: updatedRequest, transaction };
   });
 
@@ -90,6 +99,16 @@ exports.handback = (user, id, { condition }) =>
       { returnDocument: 'after', session }
     );
     if (!transaction) throw new ApiError(409, 'This loan has no active transaction');
+    const item = await Item.findById(request.itemId).select('title').session(session);
+    if (!item) throw new ApiError(404, 'Item not found');
     await Item.updateOne({ _id: request.itemId }, { listingStatus: 'closed' }, { session });
+    await notify({
+      recipientId: request.borrowerId,
+      type: 'return',
+      title: 'Return confirmed',
+      relatedEntityId: transaction._id,
+      link: '/loans/history',
+      message: `${user.name} confirmed the return of “${item.title}”. Thanks!`,
+    }, session);
     return { request: updatedRequest, transaction };
   });

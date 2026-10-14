@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useSearchParams } from 'react-router-dom';
 import api, { errMsg } from '../api/client';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Pagination from '../components/Pagination';
@@ -12,7 +12,8 @@ const KIND = { borrow: 'Borrow', sell: 'Purchase', giveaway: 'Give away' };
 const tab = (on) => `rounded-md px-3 py-1.5 text-sm ${on ? 'bg-green-700 text-white' : 'border bg-white'}`;
 
 export default function Transactions({ status }) {
-  const [role, setRole] = useState('borrower');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [role, setRole] = useState(() => (searchParams.get('role') === 'owner' ? 'owner' : 'borrower'));
   const [page, setPage] = useState(1);
   const [data, setData] = useState(null);
   const [version, setVersion] = useState(0);
@@ -34,6 +35,7 @@ export default function Transactions({ status }) {
     setRole(nextRole);
     setPage(1);
     setData(null);
+    setSearchParams(nextRole === 'owner' ? { role: 'owner' } : {});
   };
 
   const confirmReturn = async () => {

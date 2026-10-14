@@ -3,6 +3,7 @@ const BorrowRequest = require('../models/BorrowRequest');
 const ApiError = require('../utils/ApiError');
 const withTxn = require('../utils/transaction');
 const { today } = require('../utils/dates');
+const { notify } = require('./notificationService');
 
 const iso = (d) => d.toISOString().slice(0, 10);
 
@@ -16,19 +17,36 @@ exports.create = async (user, { itemId, startDate, endDate, message }) => {
     throw new ApiError(400, isBorrow ? 'Start and end dates are required' : 'Dates only apply to borrowing');
 
   const base = { itemId: item._id, ownerId: item.ownerId, borrowerId: user._id, type: item.lendingType, message };
+  const alert = (request, details) => ({
+    recipientId: item.ownerId,
+    type: 'request_new',
+    relatedEntityId: request._id,
+    link: '/requests/incoming',
+    ...details,
+  });
 
   if (isBorrow) {
     if (item.listingStatus !== 'available') throw new ApiError(409, 'This item is not available right now');
-    return BorrowRequest.create({ ...base, startDate, endDate }).catch((err) => {
+    const request = await BorrowRequest.create({ ...base, startDate, endDate }).catch((err) => {
       if (err.code === 11000) throw new ApiError(409, 'You already have an open request for this item');
       throw err;
     });
+    await notify(alert(request, {
+      title: 'New borrow request',
+      message: `${user.name} wants to borrow “${item.title}”.`,
+    }));
+    return request;
   }
 
   return withTxn(async (session) => {
     const won = await Item.findOneAndUpdate({ _id: item._id, listingStatus: 'available' }, { listingStatus: 'reserved' }, { session });
     if (!won) throw new ApiError(409, 'This item is no longer available');
     const [request] = await BorrowRequest.create([{ ...base, status: 'approved' }], { session });
+    const verb = item.lendingType === 'sell' ? 'is buying' : 'claimed';
+    await notify(alert(request, {
+      title: 'Item reserved',
+      message: `${user.name} ${verb} “${item.title}”. Arrange the handover.`,
+    }), session);
     return request;
   });
 };
@@ -58,6 +76,14 @@ exports.approve = (user, id) =>
       { returnDocument: 'after', session }
     );
     if (!approved) throw new ApiError(409, 'This request just changed, please refresh');
+    await notify({
+      recipientId: r.borrowerId,
+      type: 'request_approved',
+      title: 'Request approved',
+      relatedEntityId: r._id,
+      link: '/requests',
+      message: `Your request for “${locked.title}” was approved. Arrange pickup with the owner.`,
+    }, session);
     return approved;
   });
 
@@ -70,6 +96,15 @@ exports.reject = async (user, id) => {
     { returnDocument: 'after' }
   );
   if (!rejected) throw new ApiError(409, `A ${r.status} request cannot be rejected`);
+  const item = await Item.findById(r.itemId).select('title');
+  await notify({
+    recipientId: r.borrowerId,
+    type: 'request_rejected',
+    title: 'Request rejected',
+    relatedEntityId: r._id,
+    link: '/requests',
+    message: `Your request for “${item.title}” was not accepted.`,
+  });
   return rejected;
 };
 
@@ -87,8 +122,17 @@ exports.cancel = async (user, id) => {
       { returnDocument: 'after', session }
     );
     if (!cancelled) throw new ApiError(409, `A ${request.status} request cannot be cancelled`);
+    const item = await Item.findById(cancelled.itemId).select('title').session(session);
     if (cancelled.type !== 'borrow')
       await Item.updateOne({ _id: cancelled.itemId, listingStatus: 'reserved' }, { listingStatus: 'available' }, { session });
+    await notify({
+      recipientId: isBorrower ? cancelled.ownerId : cancelled.borrowerId,
+      type: 'request_cancelled',
+      title: 'Request cancelled',
+      relatedEntityId: cancelled._id,
+      link: isBorrower ? '/requests/incoming' : '/requests',
+      message: `${user.name} cancelled the request for “${item.title}”.`,
+    }, session);
     return cancelled;
   });
 };

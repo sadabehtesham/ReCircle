@@ -12,6 +12,7 @@ if (!mongoUri) {
 
 mongoose
   .connect(mongoUri)
+  .then(() => Promise.all(Object.values(mongoose.models).map((model) => model.init())))
   .then(() => {
     app.listen(port, () => {
       console.log(`Server listening on port ${port}`);
