@@ -1,5 +1,6 @@
 const { Schema, model } = require('mongoose');
 const { LENDING_TYPES, REQUEST_STATUSES, OPEN_STATUSES } = require('../utils/constants');
+const { today } = require('../utils/dates');
 
 const ref = (name) => ({ type: Schema.Types.ObjectId, ref: name });
 
@@ -17,7 +18,7 @@ const requestSchema = new Schema(
     reviewedAt: Date,
     cancelledBy: ref('User'),
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { virtuals: true }, id: false }
 );
 
 requestSchema.index(
@@ -27,5 +28,9 @@ requestSchema.index(
 requestSchema.index({ borrowerId: 1, createdAt: -1 });
 requestSchema.index({ ownerId: 1, status: 1, createdAt: -1 });
 requestSchema.index({ itemId: 1, status: 1, startDate: 1 });
+
+requestSchema.virtual('overdue').get(function () {
+  return this.type === 'borrow' && this.status === 'active' && today() > this.endDate;
+});
 
 module.exports = model('BorrowRequest', requestSchema);

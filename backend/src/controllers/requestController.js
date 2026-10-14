@@ -1,5 +1,6 @@
 const BorrowRequest = require('../models/BorrowRequest');
 const service = require('../services/requestService');
+const transactions = require('../services/transactionService');
 
 exports.create = async (req, res) => {
   const request = await service.create(req.user, req.body);
@@ -13,6 +14,13 @@ const act = (name) => async (req, res) => {
 exports.cancel = act('cancel');
 exports.approve = act('approve');
 exports.reject = act('reject');
+
+const flow = (name) => async (req, res) => {
+  const data = await transactions[name](req.user, req.params.id, req.body);
+  res.json({ success: true, data });
+};
+exports.handover = flow('handover');
+exports.handback = flow('handback');
 
 exports.list = async (req, res) => {
   const { role, status, itemId, page, limit } = req.valid;

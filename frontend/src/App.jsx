@@ -13,6 +13,7 @@ import ItemForm from './pages/ItemForm';
 import Profile from './pages/Profile';
 import EditProfile from './pages/EditProfile';
 import Requests from './pages/Requests';
+import Transactions from './pages/Transactions';
 
 export default function App() {
   const { authError } = useAuth();
@@ -36,6 +37,8 @@ export default function App() {
             <Route path="/profile/edit" element={<EditProfile />} />
             <Route path="/requests" element={<Requests role="borrower" />} />
             <Route path="/requests/incoming" element={<Requests role="owner" />} />
+            <Route path="/loans" element={<Transactions key="active" status="active" />} />
+            <Route path="/loans/history" element={<Transactions key="done" status="completed" />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

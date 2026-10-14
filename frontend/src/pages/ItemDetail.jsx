@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import api, { errMsg } from '../api/client';
 import Badge from '../components/Badge';
 import ConfirmDialog from '../components/ConfirmDialog';
+import RequestPanel from '../components/RequestPanel';
 import { useAuth } from '../context/AuthContext';
 import { CATEGORIES, CONDITIONS, LENDING } from '../utils/constants';
 
@@ -105,6 +106,7 @@ export default function ItemDetail() {
         </dl>
 
         {actionError && <p role="alert" className="text-sm text-red-600">{actionError}</p>}
+        <RequestPanel item={item} />
         {isOwner && (
           <div className="flex gap-2 pt-2">
             <Link to={`/items/${id}/edit`} className="rounded-md border bg-white px-3 py-1.5 text-sm">Edit</Link>

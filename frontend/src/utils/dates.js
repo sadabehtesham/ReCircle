@@ -9,3 +9,5 @@ export const fmtDay = (value) => {
     timeZone: 'UTC',
   }).format(date);
 };
+
+export const lastDay = (dueAt) => fmtDay(new Date(new Date(dueAt).getTime() - 86400000));

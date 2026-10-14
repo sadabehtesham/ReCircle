@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { REQUEST_STATUSES } = require('../utils/constants');
+const { REQUEST_STATUSES, CONDITIONS } = require('../utils/constants');
 const { today, dayCount, DAY } = require('../utils/dates');
 
 const MAX_DAYS = 14;
@@ -52,4 +52,13 @@ exports.list = z.object({
   itemId: objectId.optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(10),
+});
+
+exports.handover = z.object({
+  condition: z.enum(CONDITIONS).optional(),
+  paymentReceived: z.boolean().optional(),
+});
+
+exports.handback = z.object({
+  condition: z.enum(CONDITIONS).optional(),
 });

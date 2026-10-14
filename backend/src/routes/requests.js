@@ -10,5 +10,7 @@ router.post('/', validate(v.create), c.create);
 router.patch('/:id/cancel', c.cancel);
 router.patch('/:id/approve', c.approve);
 router.patch('/:id/reject', c.reject);
+router.post('/:id/handover', validate(v.handover), c.handover);
+router.post('/:id/return', validate(v.handback), c.handback);
 
 module.exports = router;

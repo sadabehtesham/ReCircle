@@ -3,7 +3,9 @@ import { Link, NavLink } from 'react-router-dom';
 import api, { errMsg } from '../api/client';
 import ConfirmDialog from '../components/ConfirmDialog';
 import Pagination from '../components/Pagination';
+import Select from '../components/Select';
 import StatusBadge from '../components/StatusBadge';
+import { CONDITIONS } from '../utils/constants';
 import { fmtDay } from '../utils/dates';
 
 const KIND = { borrow: 'Borrow', sell: 'Purchase', giveaway: 'Give away' };
@@ -21,6 +23,8 @@ export default function Requests({ role }) {
   const [version, setVersion] = useState(0);
   const [error, setError] = useState('');
   const [target, setTarget] = useState(null); // { r, verb }
+  const [handover, setHandover] = useState(null);
+  const [form, setForm] = useState({ condition: '', paid: false });
 
   useEffect(() => {
     let live = true;
@@ -42,6 +46,20 @@ export default function Requests({ role }) {
     }
     setVersion((n) => n + 1); // reload either way: a conflict means the data changed
     setTarget(null);
+  };
+
+  const doHandover = async () => {
+    try {
+      await api.post(`/requests/${handover._id}/handover`, {
+        ...(form.condition && { condition: form.condition }),
+        ...(handover.type === 'sell' && { paymentReceived: form.paid }),
+      });
+      setError('');
+    } catch (e) {
+      setError(errMsg(e));
+    }
+    setVersion((n) => n + 1);
+    setHandover(null);
   };
 
   const d = target && DIALOG[target.verb];
@@ -75,7 +93,7 @@ export default function Requests({ role }) {
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link to={`/items/${r.itemId._id}`} className="font-medium hover:underline">{r.itemId.title}</Link>
-                      <StatusBadge status={r.status} />
+                      <StatusBadge status={r.overdue ? 'overdue' : r.status} />
                     </div>
                     <p className="text-sm text-gray-600">
                       {KIND[r.type]}{r.type === 'borrow' && `: ${fmtDay(r.startDate)} to ${fmtDay(r.endDate)}`}
@@ -85,6 +103,14 @@ export default function Requests({ role }) {
                     {r.message && <p className="text-sm text-gray-700">“{r.message}”</p>}
                   </div>
                   <div className="flex flex-col gap-2 self-start">
+                    {asOwner && r.status === 'approved' && (
+                      <button
+                        onClick={() => { setForm({ condition: '', paid: false }); setHandover(r); }}
+                        className="rounded-md bg-green-700 px-3 py-1 text-sm text-white hover:bg-green-800"
+                      >
+                        Handed over
+                      </button>
+                    )}
                     {asOwner && r.status === 'pending' && (
                       <>
                         <button onClick={() => run('approve', r)} className="rounded-md bg-green-700 px-3 py-1 text-sm text-white hover:bg-green-800">
@@ -108,6 +134,33 @@ export default function Requests({ role }) {
         message={target && `“${target.r.itemId.title}”: ${d.text}`}
         onConfirm={() => run(target.verb, target.r)} onCancel={() => setTarget(null)}
       />
+      <ConfirmDialog
+        open={Boolean(handover)}
+        tone="green"
+        title="Confirm handover"
+        confirmLabel="Confirm handover"
+        message={handover && `Confirm that you gave “${handover.itemId.title}” to ${handover.borrowerId.name}.${handover.type === 'borrow' ? '' : ' The listing will be closed.'}`}
+        disabled={handover?.type === 'sell' && !form.paid}
+        onConfirm={doHandover}
+        onCancel={() => setHandover(null)}
+      >
+        {handover?.type === 'sell' && (
+          <label className="mt-3 flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={form.paid} onChange={(e) => setForm({ ...form, paid: e.target.checked })} />
+            I received ₹{handover.itemId.price}
+          </label>
+        )}
+        <div className="mt-3">
+          <Select
+            id="condition"
+            label="Item condition (optional)"
+            placeholder="Not recorded"
+            options={CONDITIONS}
+            value={form.condition}
+            onChange={(e) => setForm({ ...form, condition: e.target.value })}
+          />
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }
