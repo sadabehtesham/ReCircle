@@ -28,6 +28,8 @@ export default function Navbar() {
             <>
               <Link to="/items/new">List an item</Link>
               <Link to="/dashboard">Dashboard</Link>
+              <Link to="/requests">My requests</Link>
+              <Link to="/requests/incoming">Incoming</Link>
               <Link to={`/users/${user._id}`}>Profile</Link>
               <button onClick={handleLogout} className="text-gray-600 hover:text-gray-900">Log out</button>
             </>

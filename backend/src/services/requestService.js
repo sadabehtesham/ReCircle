@@ -55,7 +55,7 @@ exports.approve = (user, id) =>
     const approved = await BorrowRequest.findOneAndUpdate(
       { _id: r._id, status: 'pending' },
       { status: 'approved', reviewedBy: user._id, reviewedAt: new Date() },
-      { new: true, session }
+      { returnDocument: 'after', session }
     );
     if (!approved) throw new ApiError(409, 'This request just changed, please refresh');
     return approved;
@@ -67,7 +67,7 @@ exports.reject = async (user, id) => {
   const rejected = await BorrowRequest.findOneAndUpdate(
     { _id: id, status: 'pending' },
     { status: 'rejected', reviewedBy: user._id, reviewedAt: new Date() },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!rejected) throw new ApiError(409, `A ${r.status} request cannot be rejected`);
   return rejected;
@@ -84,7 +84,7 @@ exports.cancel = async (user, id) => {
     const cancelled = await BorrowRequest.findOneAndUpdate(
       { _id: id, status: { $in: cancellable } },
       { status: 'cancelled', cancelledBy: user._id },
-      { new: true, session }
+      { returnDocument: 'after', session }
     );
     if (!cancelled) throw new ApiError(409, `A ${request.status} request cannot be cancelled`);
     if (cancelled.type !== 'borrow')
